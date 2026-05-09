@@ -1,64 +1,39 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 
-interface Props {
-  onRoll: (value: number) => void;
-  disabled: boolean;
-}
+interface Props { onRoll: (v: number) => void; disabled: boolean; }
 
 const Dice: React.FC<Props> = ({ onRoll, disabled }) => {
   const [shells, setShells] = useState([false, false, false, false]);
-  const [isRolling, setIsRolling] = useState(false);
+  const [rolling, setRolling] = useState(false);
 
   const roll = () => {
-    if (disabled || isRolling) return;
-    
-    setIsRolling(true);
-    
-    // Animate rolling effect
-    const interval = setInterval(() => {
-      setShells([Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5]);
-    }, 100);
-
+    if (disabled || rolling) return;
+    setRolling(true);
+    const iv = setInterval(() =>
+      setShells([Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5])
+    , 80);
     setTimeout(() => {
-      clearInterval(interval);
-      const finalShells = [Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5];
-      setShells(finalShells);
-      
-      const openCount = finalShells.filter(s => s).length;
-      let value = openCount;
-      if (openCount === 0) value = 4;
-      else if (openCount === 4) value = 8;
-      
-      onRoll(value);
-      setIsRolling(false);
-    }, 800);
+      clearInterval(iv);
+      const final = [Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5, Math.random() > 0.5];
+      setShells(final);
+      const open = final.filter(Boolean).length;
+      const val = open === 0 ? 4 : open === 4 ? 8 : open;
+      onRoll(val);
+      setRolling(false);
+    }, 900);
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="dice-tray">
-        {shells.map((isOpen, i) => (
-          <motion.div
-            key={i}
-            className={`shell ${isOpen ? 'open' : ''}`}
-            animate={isRolling ? { 
-              rotate: [0, 90, 180, 270, 360],
-              y: [0, -20, 0]
-            } : {}}
-            transition={{ duration: 0.4, repeat: isRolling ? Infinity : 0 }}
-          />
+    <>
+      <div className="shells-tray">
+        {shells.map((o, i) => (
+          <div key={i} className={`shell${o ? ' open' : ''}`} />
         ))}
       </div>
-      
-      <button
-        onClick={roll}
-        disabled={disabled || isRolling}
-        className={`btn-primary px-10 py-3 text-xl ${disabled ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-      >
-        {isRolling ? 'Rolling...' : 'Roll Shells'}
+      <button className="roll-btn" onClick={roll} disabled={disabled || rolling}>
+        {rolling ? '🎲 Tossing…' : '🎲 Toss Shells'}
       </button>
-    </div>
+    </>
   );
 };
 
