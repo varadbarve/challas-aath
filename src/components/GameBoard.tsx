@@ -13,16 +13,16 @@ const PLAYER_LIGHT  = ['#ff6b6b', '#5dade2', '#f9ca24', '#55efc4'];
 const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
 const CENTER_IDX    = 24;
 
-// Entry arrows: which cell gets which player's arrow, and in which direction
-// Player 0 (Red)  starts at [4,2] → arrow points UP (↑)
-// Player 1 (Blue) starts at [2,4] → arrow points LEFT (←)
-// Player 2 (Yellow) starts at [0,2] → arrow points DOWN (↓)
-// Player 3 (Green) starts at [2,0] → arrow points RIGHT (→)
+// Entry arrows on the cell BEFORE home (where pieces enter from)
+// Red  home=[4,2], enters from [4,1] → arrow points RIGHT (→)
+// Blue home=[2,4], enters from [1,4] → arrow points DOWN  (↓)
+// Yellow home=[0,2], enters from [0,3] → arrow points LEFT (←)
+// Green home=[2,0], enters from [3,0] → arrow points UP   (↑)
 const ENTRY_ARROWS: { [key: string]: { color: string; arrow: string; pi: number }[] } = {
-  '4-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
-  '2-4': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }],
-  '0-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }],
-  '2-0': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
+  '4-1': [{ color: PLAYER_COLORS[0], arrow: '→', pi: 0 }],
+  '1-4': [{ color: PLAYER_COLORS[1], arrow: '↓', pi: 1 }],
+  '0-3': [{ color: PLAYER_COLORS[2], arrow: '←', pi: 2 }],
+  '3-0': [{ color: PLAYER_COLORS[3], arrow: '↑', pi: 3 }],
 };
 
 const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
@@ -41,7 +41,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
   };
 
   const toggleTheme = () =>
-    setGameState(prev => ({ ...prev, theme: prev.theme === 'wooden' ? 'neo' : 'wooden' }));
+    setGameState(prev => ({ ...prev, theme: prev.theme === 'wooden' ? 'glass' : 'wooden' }));
 
   const handleRoll = (value: number) => {
     const newPending = [...pendingRolls, value];
