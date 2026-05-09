@@ -161,10 +161,76 @@ body{font-family:'Inter',sans-serif;background:var(--body-bg);min-height:100vh;c
 
 
 
-/* Board pieces */
-.board-piece{width:calc(min(65vw,520px)/5*0.38);height:calc(min(65vw,520px)/5*0.38);border-radius:50%;cursor:pointer;position:relative;transition:all .15s;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.35)}
-.board-piece::after{content:'';position:absolute;top:15%;left:15%;width:35%;height:35%;background:rgba(255,255,255,0.3);border-radius:50%}
-.board-piece.playable:hover{transform:scale(1.25);border-color:white;box-shadow:0 0 12px currentColor,0 3px 8px rgba(0,0,0,0.4);z-index:10}
+/* Piece layer for animation */
+.piece-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.board-piece {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.board-piece.playable {
+  pointer-events: auto;
+  animation: piece-pulse 1.5s infinite;
+  box-shadow: 0 0 15px currentColor;
+  z-index: 10;
+}
+
+@keyframes piece-pulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.15); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.extra-badge {
+  background: #27ae60;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-top: 8px;
+  animation: slide-up 0.3s ease-out;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.roll-pills {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.roll-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.roll-pill.selected {
+  background: var(--btn-grad);
+  color: var(--btn-text);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
 
 /* ── DICE ───────────────────────────────────────── */
 .dice-area{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1.5rem 2.5rem;background:var(--dice-bg);border:1px solid var(--dice-border);border-radius:1.25rem;backdrop-filter:var(--glass-blur)}

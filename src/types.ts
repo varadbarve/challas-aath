@@ -1,10 +1,11 @@
 export type Player = {
-  id: number;
+  id: number | string;
   name: string;
   color: string;
   pieces: number[]; // Index in their respective path array (-1 means home)
   path: [number, number][];
   isFinished: boolean;
+  hasKill: boolean; // Required to enter inner circle
 };
 
 export type GameState = {

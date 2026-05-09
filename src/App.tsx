@@ -31,6 +31,7 @@ const App: React.FC = () => {
       pieces: [0, 0, 0, 0],
       path: playerPaths[i],
       isFinished: false,
+      hasKill: false,
     }));
     setGameState(prev => ({
       ...prev,
