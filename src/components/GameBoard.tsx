@@ -11,33 +11,22 @@ interface Props {
 const PLAYER_COLORS = ['#e74c3c', '#2980b9', '#f39c12', '#27ae60'];
 const PLAYER_LIGHT  = ['#ff6b6b', '#5dade2', '#f9ca24', '#55efc4'];
 const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
-const CENTER_IDX    = 26; // 16 outer + 1 home + 8 inner + 1 inner-repeat + 1 center
+const CENTER_IDX    = 25; // 16 outer + 8 inner + 1 inner-repeat + 1 center
 
-// Updated arrows based on the image provided
-// Sequences: (Home-1 -> Home), (Home -> Inner), (Inner-Start -> Center)
-const ENTRY_ARROWS: { [key: string]: { color: string; arrow: string; pi: number }[] } = {
-  // Red (Player 0)
-  '4-1': [{ color: PLAYER_COLORS[0], arrow: '→', pi: 0 }],
-  '4-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
-  '3-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
-  // Blue (Player 1)
-  '1-4': [{ color: PLAYER_COLORS[1], arrow: '↓', pi: 1 }],
-  '2-4': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }],
-  '2-3': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }],
-  // Yellow (Player 2)
-  '0-3': [{ color: PLAYER_COLORS[2], arrow: '←', pi: 2 }],
-  '0-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }],
-  '1-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }],
-  // Green (Player 3)
-  '3-0': [{ color: PLAYER_COLORS[3], arrow: '↑', pi: 3 }],
-  '2-0': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
-  '2-1': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
-  
-  // Corner Turns (Decorative)
-  '4-4': [{ color: '#8b4513', arrow: '↑', pi: -1 }], // BR Corner turns Up
-  '0-4': [{ color: '#8b4513', arrow: '←', pi: -1 }], // TR Corner turns Left
-  '0-0': [{ color: '#8b4513', arrow: '↓', pi: -1 }], // TL Corner turns Down
-  '4-0': [{ color: '#8b4513', arrow: '→', pi: -1 }], // BL Corner turns Right
+// Precise arrows based on the new hand-drawn image
+// Small turns in corners and center entry arrows
+const ENTRY_ARROWS: { [key: string]: { color: string; arrow: string; pi: number; size?: string }[] } = {
+  // Inner Ring Corner Turns (Big arrows in your drawing, made small as requested)
+  '3-1': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }], // Red turn
+  '1-1': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }], // Green turn
+  '1-3': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }], // Yellow turn
+  '3-3': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }], // Blue turn
+
+  // Center Entry Arrows (Small arrows in your drawing)
+  '3-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0, size: 'small' }], // Red enter
+  '2-1': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3, size: 'small' }], // Green enter
+  '1-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2, size: 'small' }], // Yellow enter
+  '2-3': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1, size: 'small' }], // Blue enter
 };
 
 const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
@@ -239,10 +228,10 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         className={`cell${isCenter ? ' center' : safe ? ' safe' : ''}${isHighlighted ? ' highlight' : ''}`}
       >
         {/* Entry and turn arrows */}
-        {arrows.map(({ color, arrow, pi }, i) => (
+        {arrows.map(({ color, arrow, pi, size }, i) => (
           <span
             key={`arrow-${pi}-${i}`}
-            className={`entry-arrow ${pi === -1 ? 'turn-arrow' : ''}`}
+            className={`entry-arrow ${size === 'small' ? 'small-entry' : 'turn-arrow'}`}
             style={{ color }}
           >
             {arrow}

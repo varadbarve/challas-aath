@@ -18,21 +18,17 @@ export const getPaths = () => {
     // 1. Outer ring (16 squares)
     const rotatedOuter = [...outer.slice(startIndex), ...outer.slice(0, startIndex)];
     
-    // 2. Add home square again (The piece visits home before entering inner ring)
-    const homeSquare = outer[startIndex];
-    
-    // 3. Inner ring (8 squares)
-    // Mapping starting outer index to inner starting square
+    // 2. Inner ring (8 squares)
     let rotatedInner: [number, number][] = [];
     if (startIndex === 0) rotatedInner = [...inner];
     else if (startIndex === 4) rotatedInner = [...inner.slice(2), ...inner.slice(0, 2)];
     else if (startIndex === 8) rotatedInner = [...inner.slice(4), ...inner.slice(0, 4)];
     else if (startIndex === 12) rotatedInner = [...inner.slice(6), ...inner.slice(0, 6)];
 
-    // 4. Return to inner starting square before entering center
+    // 3. Return to inner starting square before entering center
     const innerStart = rotatedInner[0];
 
-    return [...rotatedOuter, homeSquare, ...rotatedInner, innerStart, center];
+    return [...rotatedOuter, ...rotatedInner, innerStart, center];
   };
 
   return {

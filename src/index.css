@@ -126,42 +126,39 @@ body{font-family:'Inter',sans-serif;background:var(--body-bg);min-height:100vh;c
 .entry-arrow{position:absolute;font-size:clamp(.7rem,2vw,1rem);font-weight:900;line-height:1;z-index:5;pointer-events:none;opacity:.9;text-shadow:0 0 6px rgba(0,0,0,0.5)}
 .glass .entry-arrow { text-shadow: 0 0 8px currentColor; }
 
-/* Turn arrows at corners */
-.entry-arrow.turn-arrow { opacity: 0.4; font-size: 1.2rem; }
+/* Turn arrows at corners of inner ring */
+.entry-arrow.turn-arrow { 
+  opacity: 0.6; 
+  font-size: 1.4rem; 
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.3));
+}
 
-/* [4,1] = 22nd cell → arrow → */
-.cell:nth-child(22) .entry-arrow{right:4px;top:50%;transform:translateY(-50%)}
-/* [4,2] = 23rd cell → arrow ↑ (Red Entry) */
-.cell:nth-child(23) .entry-arrow{top:4px;left:50%;transform:translateX(-50%)}
-/* [3,2] = 18th cell → arrow ↑ (Red Inner to Center) */
-.cell:nth-child(18) .entry-arrow{top:4px;left:50%;transform:translateX(-50%)}
+/* Small entry arrows pointing into center */
+.entry-arrow.small-entry {
+  opacity: 0.8;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
 
-/* [1,4] = 10th cell → arrow ↓ */
-.cell:nth-child(10) .entry-arrow{bottom:4px;left:50%;transform:translateX(-50%)}
-/* [2,4] = 15th cell → arrow ← (Blue Entry) */
-.cell:nth-child(15) .entry-arrow{left:4px;top:50%;transform:translateY(-50%)}
-/* [2,3] = 14th cell → arrow ← (Blue Inner to Center) */
-.cell:nth-child(14) .entry-arrow{left:4px;top:50%;transform:translateY(-50%)}
+/* [3,1] = 17th cell → Red Big Turn ↑ */
+.cell:nth-child(17) .entry-arrow.turn-arrow { top: 4px; left: 4px; }
+/* [1,1] = 7th cell → Green Big Turn → */
+.cell:nth-child(7) .entry-arrow.turn-arrow { top: 4px; right: 4px; }
+/* [1,3] = 9th cell → Yellow Big Turn ↓ */
+.cell:nth-child(9) .entry-arrow.turn-arrow { bottom: 4px; right: 4px; }
+/* [3,3] = 19th cell → Blue Big Turn ← */
+.cell:nth-child(19) .entry-arrow.turn-arrow { bottom: 4px; left: 4px; }
 
-/* [0,3] = 4th cell → arrow ← */
-.cell:nth-child(4) .entry-arrow{left:4px;top:50%;transform:translateY(-50%)}
-/* [0,2] = 3rd cell → arrow ↓ (Yellow Entry) */
-.cell:nth-child(3) .entry-arrow{bottom:4px;left:50%;transform:translateX(-50%)}
-/* [1,2] = 8th cell → arrow ↓ (Yellow Inner to Center) */
-.cell:nth-child(8) .entry-arrow{bottom:4px;left:50%;transform:translateX(-50%)}
+/* Small center entry arrows */
+/* [3,2] = 18th cell → Red Enter ↑ */
+.cell:nth-child(18) .entry-arrow.small-entry { top: 0; left: 50%; transform: translateX(-50%) translateY(-20%); }
+/* [2,1] = 12th cell → Green Enter → */
+.cell:nth-child(12) .entry-arrow.small-entry { right: 0; top: 50%; transform: translateY(-50%) translateX(20%); }
+/* [1,2] = 8th cell → Yellow Enter ↓ */
+.cell:nth-child(8) .entry-arrow.small-entry { bottom: 0; left: 50%; transform: translateX(-50%) translateY(20%); }
+/* [2,3] = 14th cell → Blue Enter ← */
+.cell:nth-child(14) .entry-arrow.small-entry { left: 0; top: 50%; transform: translateY(-50%) translateX(-20%); }
 
-/* [3,0] = 16th cell → arrow ↑ */
-.cell:nth-child(16) .entry-arrow{top:4px;left:50%;transform:translateX(-50%)}
-/* [2,0] = 11th cell → arrow → (Green Entry) */
-.cell:nth-child(11) .entry-arrow{right:4px;top:50%;transform:translateY(-50%)}
-/* [2,1] = 12th cell → arrow → (Green Inner to Center) */
-.cell:nth-child(12) .entry-arrow{right:4px;top:50%;transform:translateY(-50%)}
-
-/* Corner Turns */
-.cell:nth-child(25) .entry-arrow { left: 4px; top: 4px; } /* [4,4] BR turns Up/Left */
-.cell:nth-child(5) .entry-arrow { left: 4px; bottom: 4px; } /* [0,4] TR turns Down/Left */
-.cell:nth-child(1) .entry-arrow { right: 4px; bottom: 4px; } /* [0,0] TL turns Down/Right */
-.cell:nth-child(21) .entry-arrow { right: 4px; top: 4px; } /* [4,0] BL turns Up/Right */
 
 
 /* Board pieces */
