@@ -262,12 +262,20 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
                 const activeRoll = selectedRollIndex !== null ? pendingRolls[selectedRollIndex] : null;
                 const canMove = isOwn && turnPhase === 'moving' && activeRoll !== null && pos !== CENTER_IDX && (pos + activeRoll <= CENTER_IDX) && (pos + activeRoll < 15 || p.hasKill);
 
-                // Multiple pieces in same cell offset
-                const sameCellCount = players.reduce((acc, op) => acc + op.pieces.filter(opos => {
-                   const [or, oc] = op.path[opos];
-                   return or === r && oc === c;
-                }).length, 0);
-                const offset = sameCellCount > 1 ? (pIdx - sameCellCount/2) * 5 : 0;
+                // Multiple pieces in same cell offset (fanning effect)
+                const piecesInCell = players.flatMap((op, opIdx) => 
+                  op.pieces.map((opos, pieceIdx) => ({ opIdx, pieceIdx, pos: opos }))
+                ).filter(item => {
+                  const [or, oc] = players[item.opIdx].path[item.pos];
+                  return or === r && oc === c;
+                });
+
+                const pieceRank = piecesInCell.findIndex(item => item.opIdx === pi && item.pieceIdx === pIdx);
+                const totalInCell = piecesInCell.length;
+                
+                // Offset calculation for fanning
+                const xOffset = totalInCell > 1 ? (pieceRank - (totalInCell - 1) / 2) * 12 : 0;
+                const yOffset = totalInCell > 1 ? (pieceRank - (totalInCell - 1) / 2) * 2 : 0;
 
                 return (
                   <div
@@ -275,18 +283,19 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
                     className={`board-piece ${canMove ? 'playable' : ''}`}
                     style={{
                       position: 'absolute',
-                      left: coords.x + offset,
-                      top: coords.y + offset,
+                      left: coords.x + xOffset,
+                      top: coords.y + yOffset,
                       transform: 'translate(-50%, -50%)',
                       backgroundColor: PLAYER_COLORS[pi],
                       border: `2px solid ${PLAYER_LIGHT[pi]}`,
                       transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                       pointerEvents: 'auto',
-                      zIndex: canMove ? 10 : 2
+                      zIndex: canMove ? 20 : 2 + pieceRank
                     }}
                     onClick={() => canMove && movePiece(pIdx)}
                   />
                 );
+
               }))}
             </div>
           </div>

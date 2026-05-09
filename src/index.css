@@ -170,13 +170,25 @@ body{font-family:'Inter',sans-serif;background:var(--body-bg);min-height:100vh;c
 }
 
 .board-piece {
-  width: 32px;
-  height: 32px;
+  width: calc(min(70vw, 520px) / 5 * 0.42);
+  height: calc(min(70vw, 520px) / 5 * 0.42);
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.25);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+.board-piece::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  left: 15%;
+  width: 35%;
+  height: 35%;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+}
+
 
 .board-piece.playable {
   pointer-events: auto;
