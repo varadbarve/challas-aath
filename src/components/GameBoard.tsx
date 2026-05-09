@@ -11,18 +11,33 @@ interface Props {
 const PLAYER_COLORS = ['#e74c3c', '#2980b9', '#f39c12', '#27ae60'];
 const PLAYER_LIGHT  = ['#ff6b6b', '#5dade2', '#f9ca24', '#55efc4'];
 const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
-const CENTER_IDX    = 24;
+const CENTER_IDX    = 26; // 16 outer + 1 home + 8 inner + 1 inner-repeat + 1 center
 
-// Entry arrows on the cell BEFORE home (where pieces enter from)
-// Red  home=[4,2], enters from [4,1] → arrow points RIGHT (→)
-// Blue home=[2,4], enters from [1,4] → arrow points DOWN  (↓)
-// Yellow home=[0,2], enters from [0,3] → arrow points LEFT (←)
-// Green home=[2,0], enters from [3,0] → arrow points UP   (↑)
+// Updated arrows based on the image provided
+// Sequences: (Home-1 -> Home), (Home -> Inner), (Inner-Start -> Center)
 const ENTRY_ARROWS: { [key: string]: { color: string; arrow: string; pi: number }[] } = {
+  // Red (Player 0)
   '4-1': [{ color: PLAYER_COLORS[0], arrow: '→', pi: 0 }],
+  '4-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
+  '3-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
+  // Blue (Player 1)
   '1-4': [{ color: PLAYER_COLORS[1], arrow: '↓', pi: 1 }],
+  '2-4': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }],
+  '2-3': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }],
+  // Yellow (Player 2)
   '0-3': [{ color: PLAYER_COLORS[2], arrow: '←', pi: 2 }],
+  '0-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }],
+  '1-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }],
+  // Green (Player 3)
   '3-0': [{ color: PLAYER_COLORS[3], arrow: '↑', pi: 3 }],
+  '2-0': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
+  '2-1': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
+  
+  // Corner Turns (Decorative)
+  '4-4': [{ color: '#8b4513', arrow: '↑', pi: -1 }], // BR Corner turns Up
+  '0-4': [{ color: '#8b4513', arrow: '←', pi: -1 }], // TR Corner turns Left
+  '0-0': [{ color: '#8b4513', arrow: '↓', pi: -1 }], // TL Corner turns Down
+  '4-0': [{ color: '#8b4513', arrow: '→', pi: -1 }], // BL Corner turns Right
 };
 
 const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
@@ -223,11 +238,11 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         key={cellKey}
         className={`cell${isCenter ? ' center' : safe ? ' safe' : ''}${isHighlighted ? ' highlight' : ''}`}
       >
-        {/* Entry arrows */}
-        {arrows.map(({ color, arrow, pi }) => (
+        {/* Entry and turn arrows */}
+        {arrows.map(({ color, arrow, pi }, i) => (
           <span
-            key={`arrow-${pi}`}
-            className="entry-arrow"
+            key={`arrow-${pi}-${i}`}
+            className={`entry-arrow ${pi === -1 ? 'turn-arrow' : ''}`}
             style={{ color }}
           >
             {arrow}

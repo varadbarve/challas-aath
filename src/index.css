@@ -22,30 +22,57 @@
 
 /* ── GLASSMORPHISM THEME ────────────────────────── */
 .glass {
-  --body-bg:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);
-  --text-main:#f0f0f0;--text-muted:rgba(255,255,255,0.55);
-  --card-bg:rgba(255,255,255,0.08);--card-border:rgba(255,255,255,0.15);
-  --board-bg:rgba(255,255,255,0.06);--safe-bg:rgba(255,255,255,0.12);--center-bg:rgba(255,255,255,0.18);
-  --board-border:1px solid rgba(255,255,255,0.12);
-  --cell-bg:rgba(255,255,255,0.04);--cell-border:1px solid rgba(255,255,255,0.06);
-  --highlight-bg:rgba(116,185,255,0.2);--highlight-shadow:inset 0 0 0 2px rgba(116,185,255,0.5);
-  --outer-bg:rgba(255,255,255,0.06);--outer-shadow:0 8px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.1);
-  --dice-bg:rgba(255,255,255,0.08);--dice-border:rgba(255,255,255,0.15);
-  --btn-grad:linear-gradient(135deg,#667eea,#764ba2);--btn-text:#fff;
-  --accent:#667eea;
-  --glass-blur:blur(20px);
+  --body-bg: #0f0c29;
+  --glass-mesh: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 0% 50%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 50%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 0% 100%, hsla(339,49%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 100%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, hsla(253,16%,7%,1) 0, transparent 50%);
+  --text-main:#ffffff;--text-muted:rgba(255,255,255,0.6);
+  --card-bg:rgba(255,255,255,0.06);--card-border:rgba(255,255,255,0.1);
+  --board-bg:rgba(255,255,255,0.03);--safe-bg:rgba(255,255,255,0.08);--center-bg:rgba(255,255,255,0.15);
+  --board-border:1px solid rgba(255,255,255,0.15);
+  --cell-bg:transparent;--cell-border:1px solid rgba(255,255,255,0.05);
+  --highlight-bg:rgba(255,255,255,0.1);--highlight-shadow:inset 0 0 0 2px rgba(255,255,255,0.4);
+  --outer-bg:rgba(255,255,255,0.02);--outer-shadow:0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);
+  --dice-bg:rgba(255,255,255,0.05);--dice-border:rgba(255,255,255,0.1);
+  --btn-grad:linear-gradient(135deg,#6366f1 0%,#a855f7 100%);--btn-text:#fff;
+  --accent:#a855f7;
+  --glass-blur:blur(24px);
   --wood-grain:none;
 }
 
+.glass::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--glass-mesh);
+  z-index: -1;
+  animation: mesh-flow 20s ease infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes mesh-flow {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--body-bg);min-height:100vh;color:var(--text-main);overflow-x:hidden}
-#root{width:100%;min-height:100vh}
+body{font-family:'Inter',sans-serif;background:var(--body-bg);min-height:100vh;color:var(--text-main);overflow-x:hidden;transition:background 0.5s ease}
+#root{width:100%;min-height:100vh;position:relative}
 
 /* ── SETUP ──────────────────────────────────────── */
-.setup-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:2rem}
-.setup-title{font-family:'Cinzel',serif;font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;text-align:center;background:linear-gradient(135deg,#f9ca24,#f0932b,#e74c3c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(249,202,36,0.4));letter-spacing:.05em}
+.setup-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;gap:2rem;position:relative}
+.setup-title{font-family:'Cinzel',serif;font-size:clamp(2.5rem,6vw,4.5rem);font-weight:900;text-align:center;background:linear-gradient(135deg,#f9ca24,#f0932b,#e74c3c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(249,202,36,0.3));letter-spacing:.05em}
+.glass .setup-title{background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 30px rgba(168,85,247,0.4))}
 .setup-subtitle{color:var(--text-muted);font-size:1rem;letter-spacing:.2em;text-transform:uppercase;margin-top:-1.5rem;text-align:center}
-.setup-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:1.5rem;padding:2.5rem;width:100%;max-width:520px;backdrop-filter:var(--glass-blur);box-shadow:0 40px 80px rgba(0,0,0,0.3)}
+.setup-card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:1.5rem;padding:2.5rem;width:100%;max-width:520px;backdrop-filter:var(--glass-blur);box-shadow:0 40px 80px rgba(0,0,0,0.3);position:relative;z-index:1}
+
 .setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:2rem}
 .player-input-group{display:flex;flex-direction:column;gap:.4rem}
 .player-input-label{display:flex;align-items:center;gap:.5rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.15em;color:var(--text-muted)}
@@ -95,16 +122,47 @@ body{font-family:'Inter',sans-serif;background:var(--body-bg);min-height:100vh;c
 .glass .cell.center::before{color:rgba(255,255,255,0.25)}
 .cell.highlight{background:var(--highlight-bg);box-shadow:var(--highlight-shadow)}
 
-/* Entry arrows — positioned on the cell BEFORE home */
-.entry-arrow{position:absolute;font-size:clamp(.5rem,1.5vw,.75rem);font-weight:900;line-height:1;z-index:5;pointer-events:none;opacity:.85;text-shadow:0 0 4px currentColor}
+/* Entry arrows — positioned for flow */
+.entry-arrow{position:absolute;font-size:clamp(.7rem,2vw,1rem);font-weight:900;line-height:1;z-index:5;pointer-events:none;opacity:.9;text-shadow:0 0 6px rgba(0,0,0,0.5)}
+.glass .entry-arrow { text-shadow: 0 0 8px currentColor; }
+
+/* Turn arrows at corners */
+.entry-arrow.turn-arrow { opacity: 0.4; font-size: 1.2rem; }
+
 /* [4,1] = 22nd cell → arrow → */
-.cell:nth-child(22) .entry-arrow{right:2px;top:50%;transform:translateY(-50%)}
+.cell:nth-child(22) .entry-arrow{right:4px;top:50%;transform:translateY(-50%)}
+/* [4,2] = 23rd cell → arrow ↑ (Red Entry) */
+.cell:nth-child(23) .entry-arrow{top:4px;left:50%;transform:translateX(-50%)}
+/* [3,2] = 18th cell → arrow ↑ (Red Inner to Center) */
+.cell:nth-child(18) .entry-arrow{top:4px;left:50%;transform:translateX(-50%)}
+
 /* [1,4] = 10th cell → arrow ↓ */
-.cell:nth-child(10) .entry-arrow{bottom:2px;left:50%;transform:translateX(-50%)}
+.cell:nth-child(10) .entry-arrow{bottom:4px;left:50%;transform:translateX(-50%)}
+/* [2,4] = 15th cell → arrow ← (Blue Entry) */
+.cell:nth-child(15) .entry-arrow{left:4px;top:50%;transform:translateY(-50%)}
+/* [2,3] = 14th cell → arrow ← (Blue Inner to Center) */
+.cell:nth-child(14) .entry-arrow{left:4px;top:50%;transform:translateY(-50%)}
+
 /* [0,3] = 4th cell → arrow ← */
-.cell:nth-child(4) .entry-arrow{left:2px;top:50%;transform:translateY(-50%)}
+.cell:nth-child(4) .entry-arrow{left:4px;top:50%;transform:translateY(-50%)}
+/* [0,2] = 3rd cell → arrow ↓ (Yellow Entry) */
+.cell:nth-child(3) .entry-arrow{bottom:4px;left:50%;transform:translateX(-50%)}
+/* [1,2] = 8th cell → arrow ↓ (Yellow Inner to Center) */
+.cell:nth-child(8) .entry-arrow{bottom:4px;left:50%;transform:translateX(-50%)}
+
 /* [3,0] = 16th cell → arrow ↑ */
-.cell:nth-child(16) .entry-arrow{top:2px;left:50%;transform:translateX(-50%)}
+.cell:nth-child(16) .entry-arrow{top:4px;left:50%;transform:translateX(-50%)}
+/* [2,0] = 11th cell → arrow → (Green Entry) */
+.cell:nth-child(11) .entry-arrow{right:4px;top:50%;transform:translateY(-50%)}
+/* [2,1] = 12th cell → arrow → (Green Inner to Center) */
+.cell:nth-child(12) .entry-arrow{right:4px;top:50%;transform:translateY(-50%)}
+
+/* Corner Turns */
+.cell:nth-child(25) .entry-arrow { left: 4px; top: 4px; } /* [4,4] BR turns Up/Left */
+.cell:nth-child(5) .entry-arrow { left: 4px; bottom: 4px; } /* [0,4] TR turns Down/Left */
+.cell:nth-child(1) .entry-arrow { right: 4px; bottom: 4px; } /* [0,0] TL turns Down/Right */
+.cell:nth-child(21) .entry-arrow { right: 4px; top: 4px; } /* [4,0] BL turns Up/Right */
+
 
 /* Board pieces */
 .board-piece{width:calc(min(65vw,520px)/5*0.38);height:calc(min(65vw,520px)/5*0.38);border-radius:50%;cursor:pointer;position:relative;transition:all .15s;flex-shrink:0;box-shadow:0 3px 8px rgba(0,0,0,0.35)}

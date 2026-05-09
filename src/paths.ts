@@ -15,26 +15,24 @@ export const getPaths = () => {
 
   // Function to rotate path for different players
   const rotatePath = (startIndex: number) => {
+    // 1. Outer ring (16 squares)
     const rotatedOuter = [...outer.slice(startIndex), ...outer.slice(0, startIndex)];
-    // For inner ring, we need to map the entry point.
-    // If you start at [4,2], you enter inner at [3,2].
-    // If you start at [0,2], you enter inner at [1,2].
-    // If you start at [2,0], you enter inner at [2,1].
-    // If you start at [2,4], you enter inner at [2,3].
     
+    // 2. Add home square again (The piece visits home before entering inner ring)
+    const homeSquare = outer[startIndex];
+    
+    // 3. Inner ring (8 squares)
     // Mapping starting outer index to inner starting square
-    // Player 1 (Red, index 0 in outer: [4,2]): enters inner at [3,2]
-    // Player 2 (Blue, index 4 in outer: [2,4]): enters inner at [2,3]
-    // Player 3 (Yellow, index 8 in outer: [0,2]): enters inner at [1,2]
-    // Player 4 (Green, index 12 in outer: [2,0]): enters inner at [2,1]
-    
     let rotatedInner: [number, number][] = [];
     if (startIndex === 0) rotatedInner = [...inner];
     else if (startIndex === 4) rotatedInner = [...inner.slice(2), ...inner.slice(0, 2)];
     else if (startIndex === 8) rotatedInner = [...inner.slice(4), ...inner.slice(0, 4)];
     else if (startIndex === 12) rotatedInner = [...inner.slice(6), ...inner.slice(0, 6)];
 
-    return [...rotatedOuter, ...rotatedInner, center];
+    // 4. Return to inner starting square before entering center
+    const innerStart = rotatedInner[0];
+
+    return [...rotatedOuter, homeSquare, ...rotatedInner, innerStart, center];
   };
 
   return {
