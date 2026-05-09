@@ -13,7 +13,7 @@ const App: React.FC = () => {
     currentPlayerIndex: 0,
     diceRoll: null,
     status: 'setup',
-    winner: null,
+    finishedPlayers: [],
     logs: ['Welcome to Challas Aath!'],
   });
 
@@ -33,7 +33,7 @@ const App: React.FC = () => {
       currentPlayerIndex: 0,
       diceRoll: null,
       status: 'playing',
-      winner: null,
+      finishedPlayers: [],
       logs: [`Game started! ${names[0]}'s turn.`],
     });
   };
@@ -42,23 +42,31 @@ const App: React.FC = () => {
     return <PlayerSetup onStart={handleStartGame} />;
   }
 
-  if (gameState.status === 'winner') {
+  if (gameState.status === 'finished') {
     return (
       <div className="winner-screen">
-        <div className="winner-card">
+        <div className="winner-card" style={{ padding: '2rem 3rem' }}>
           <div className="winner-trophy">🏆</div>
-          <div className="winner-title">Winner!</div>
-          <div className="winner-name" style={{ color: gameState.winner?.color }}>
-            {gameState.winner?.name}
+          <div className="winner-title" style={{ fontSize: '2rem' }}>Game Over!</div>
+          <div style={{ margin: '2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {gameState.finishedPlayers.map((p, i) => {
+              const rankStr = ['st', 'nd', 'rd'][i] || 'th';
+              const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#7f8c8d';
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '0.8rem', borderLeft: `5px solid ${p.color}` }}>
+                  <span style={{ fontSize: '1.4rem', fontWeight: 'bold', color: rankColor }}>
+                    {i + 1}{rankStr}
+                  </span>
+                  <span style={{ fontSize: '1.4rem', fontWeight: 600, color: p.color }}>{p.name}</span>
+                </div>
+              );
+            })}
           </div>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-            Congratulations — all pieces reached the center!
-          </p>
           <button
             className="play-again-btn"
             onClick={() => setGameState(prev => ({
-              ...prev, status: 'setup', players: [],
-              currentPlayerIndex: 0, diceRoll: null, winner: null,
+              ...prev, status: 'setup', players: [], finishedPlayers: [],
+              currentPlayerIndex: 0, diceRoll: null,
               logs: ['Ready for a new game!']
             }))}
           >

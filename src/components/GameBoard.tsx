@@ -14,11 +14,19 @@ const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
 const CENTER_IDX    = 24; // path.length - 1
 
 const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
-  const { players, currentPlayerIndex, diceRoll } = gameState;
+  const { players, currentPlayerIndex, diceRoll, finishedPlayers } = gameState;
   const cur = players[currentPlayerIndex];
 
   const addLog = (msg: string) =>
     setGameState(prev => ({ ...prev, logs: [...prev.logs.slice(-19), msg] }));
+
+  const getNextActivePlayer = (currentIdx: number, playersList: typeof players) => {
+    let nextIdx = (currentIdx + 1) % playersList.length;
+    while (playersList[nextIdx].isFinished) {
+      nextIdx = (nextIdx + 1) % playersList.length;
+    }
+    return nextIdx;
+  };
 
   /* ─── ROLL ─────────────────────────────────────────────── */
   const handleRoll = (value: number) => {
@@ -36,7 +44,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       setTimeout(() =>
         setGameState(prev => ({
           ...prev,
-          currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
+          currentPlayerIndex: getNextActivePlayer(prev.currentPlayerIndex, prev.players),
           diceRoll: null,
         })), 1800);
     }
@@ -63,7 +71,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     // Capture: land on non-safe square occupied by opponent → send to pos 0 (home)
     if (!isSafe(targetCoords[0], targetCoords[1])) {
       newPlayers = newPlayers.map((p, pi) => {
-        if (pi === currentPlayerIndex) return p;
+        if (pi === currentPlayerIndex || p.isFinished) return p;
         let captured = false;
         const np = p.pieces.map(pos => {
           if (pos === CENTER_IDX) return pos;        // pieces at center are safe
@@ -79,10 +87,29 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       });
     }
 
-    // Win: all 4 pieces at center
+    let newFinishedPlayers = [...finishedPlayers];
     const updatedCur = newPlayers[currentPlayerIndex];
-    if (updatedCur.pieces.every(p => p === CENTER_IDX)) {
-      setGameState(prev => ({ ...prev, players: newPlayers, status: 'winner', winner: updatedCur }));
+
+    // Check if current player has finished
+    if (updatedCur.pieces.every(p => p === CENTER_IDX) && !updatedCur.isFinished) {
+      updatedCur.isFinished = true;
+      newFinishedPlayers.push(updatedCur);
+      addLog(`${updatedCur.name} finished in position ${newFinishedPlayers.length}!`);
+    }
+
+    // Check if game is completely over (only 1 player left not finished)
+    if (newFinishedPlayers.length === newPlayers.length - 1) {
+      const lastPlayer = newPlayers.find(p => !p.isFinished)!;
+      lastPlayer.isFinished = true;
+      newFinishedPlayers.push(lastPlayer);
+      
+      setGameState(prev => ({ 
+        ...prev, 
+        players: newPlayers, 
+        status: 'finished', 
+        finishedPlayers: newFinishedPlayers,
+        diceRoll: null
+      }));
       return;
     }
 
@@ -90,7 +117,8 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     setGameState(prev => ({
       ...prev,
       players: newPlayers,
-      currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
+      finishedPlayers: newFinishedPlayers,
+      currentPlayerIndex: getNextActivePlayer(currentPlayerIndex, newPlayers),
       diceRoll: null,
     }));
   };
@@ -103,6 +131,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     // Collect all pieces sitting on this cell
     const piecesHere: { pi: number; idx: number }[] = [];
     players.forEach((p, pi) => {
+      if (p.isFinished && isCenter) return; // Don't crowd the center with finished players
       p.pieces.forEach((pos, idx) => {
         const [pr, pc] = p.path[pos];
         if (pr === r && pc === c) piecesHere.push({ pi, idx });
@@ -150,12 +179,17 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     const atCenter = p.pieces.filter(pos => pos === CENTER_IDX).length;
     const atHome   = p.pieces.filter(pos => pos === 0).length;
     const moving   = 4 - atCenter - atHome;
+    const finishRank = p.isFinished ? finishedPlayers.findIndex(fp => fp.id === p.id) + 1 : null;
 
     return (
       <div
         key={i}
         className={`player-card${isActive ? ' active' : ''}`}
-        style={{ '--player-color': PLAYER_COLORS[i] } as React.CSSProperties}
+        style={{ 
+          '--player-color': PLAYER_COLORS[i],
+          opacity: p.isFinished ? 0.5 : 1,
+          filter: p.isFinished ? 'grayscale(0.7)' : 'none'
+        } as React.CSSProperties}
       >
         <div className="player-card-header">
           <div className="player-avatar" style={{ background: PLAYER_COLORS[i] }}>
@@ -164,9 +198,11 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
           <div>
             <div className="player-name-card">{p.name}</div>
             <div className="player-status">
-              {isActive
-                ? diceRoll !== null ? '⬆ Pick a piece!' : '🎲 Roll now'
-                : 'Waiting…'}
+              {p.isFinished 
+                ? `Finished ${finishRank}${['st', 'nd', 'rd'][finishRank! - 1] || 'th'}!` 
+                : isActive
+                  ? diceRoll !== null ? '⬆ Pick a piece!' : '🎲 Roll now'
+                  : 'Waiting…'}
             </div>
           </div>
         </div>
@@ -195,7 +231,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         <button
           className="reset-btn"
           onClick={() => setGameState(prev => ({
-            ...prev, status: 'setup', players: [], currentPlayerIndex: 0,
+            ...prev, status: 'setup', players: [], finishedPlayers: [], currentPlayerIndex: 0,
             diceRoll: null, winner: null, logs: ['Game reset.']
           }))}
         >

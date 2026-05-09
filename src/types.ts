@@ -11,8 +11,8 @@ export type GameState = {
   players: Player[];
   currentPlayerIndex: number;
   diceRoll: number | null;
-  status: 'setup' | 'playing' | 'winner';
-  winner: Player | null;
+  status: 'setup' | 'playing' | 'finished';
+  finishedPlayers: Player[];
   logs: string[];
 };
 
