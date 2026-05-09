@@ -11,10 +11,13 @@ const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
     players: [],
     currentPlayerIndex: 0,
-    diceRoll: null,
     status: 'setup',
     finishedPlayers: [],
     logs: ['Welcome to Challas Aath!'],
+    turnPhase: 'rolling',
+    pendingRolls: [],
+    selectedRollIndex: null,
+    extraRolls: 0,
   });
 
   const handleStartGame = (names: string[]) => {
@@ -31,10 +34,13 @@ const App: React.FC = () => {
     setGameState({
       players: initialPlayers,
       currentPlayerIndex: 0,
-      diceRoll: null,
       status: 'playing',
       finishedPlayers: [],
       logs: [`Game started! ${names[0]}'s turn.`],
+      turnPhase: 'rolling',
+      pendingRolls: [],
+      selectedRollIndex: null,
+      extraRolls: 0,
     });
   };
 
@@ -65,8 +71,8 @@ const App: React.FC = () => {
           <button
             className="play-again-btn"
             onClick={() => setGameState(prev => ({
-              ...prev, status: 'setup', players: [], finishedPlayers: [],
-              currentPlayerIndex: 0, diceRoll: null,
+              ...prev, status: 'setup', players: [], finishedPlayers: [], currentPlayerIndex: 0,
+              turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: 0,
               logs: ['Ready for a new game!']
             }))}
           >

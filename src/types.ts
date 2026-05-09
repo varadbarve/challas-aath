@@ -10,10 +10,13 @@ export type Player = {
 export type GameState = {
   players: Player[];
   currentPlayerIndex: number;
-  diceRoll: number | null;
   status: 'setup' | 'playing' | 'finished';
   finishedPlayers: Player[];
   logs: string[];
+  turnPhase: 'rolling' | 'moving';
+  pendingRolls: number[];
+  selectedRollIndex: number | null;
+  extraRolls: number;
 };
 
 export const GRID_SIZE = 5;

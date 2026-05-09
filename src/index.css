@@ -631,16 +631,20 @@ body {
 }
 
 /* ── RESPONSIVE ────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .game-main {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
+    justify-items: center;
+    gap: 1.5rem;
   }
   .side-panel {
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
+    width: 100%;
+    gap: 1rem;
   }
-  .player-card { min-width: 140px; flex: 1; }
-  .board-grid { width: min(95vw, 440px); }
+  .player-card { min-width: 200px; flex: 1; max-width: 320px; }
+  .board-grid { width: min(85vw, 500px); }
 }
