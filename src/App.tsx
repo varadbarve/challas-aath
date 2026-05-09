@@ -3,6 +3,7 @@ import type { GameState, Player } from './types';
 import { getPaths } from './paths';
 import GameBoard from './components/GameBoard.tsx';
 import PlayerSetup from './components/PlayerSetup.tsx';
+import Confetti from './components/Confetti';
 import './index.css';
 
 const COLORS = ['#e74c3c', '#2980b9', '#f39c12', '#27ae60'];
@@ -54,6 +55,7 @@ const App: React.FC = () => {
   if (gameState.status === 'finished') {
     return (
       <div className={`winner-screen ${gameState.theme}`}>
+        <Confetti />
         <div className="winner-card" style={{ padding: '2rem 3rem' }}>
           <div className="winner-trophy">🏆</div>
           <div className="winner-title" style={{ fontSize: '2rem' }}>Game Over!</div>

@@ -22,29 +22,31 @@
 
 /* ── GLASSMORPHISM THEME ────────────────────────── */
 .glass {
-  --body-bg: #0f0c29;
+  --body-bg: #030014;
   --glass-mesh: 
     radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
     radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
-    radial-gradient(at 0% 50%, hsla(225,39%,30%,1) 0, transparent 50%), 
-    radial-gradient(at 100% 50%, hsla(225,39%,30%,1) 0, transparent 50%), 
     radial-gradient(at 0% 100%, hsla(339,49%,30%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 100%, hsla(225,39%,30%,1) 0, transparent 50%), 
     radial-gradient(at 100% 100%, hsla(253,16%,7%,1) 0, transparent 50%);
   --text-main:#ffffff;--text-muted:rgba(255,255,255,0.6);
-  --card-bg:rgba(255,255,255,0.06);--card-border:rgba(255,255,255,0.1);
-  --board-bg:rgba(255,255,255,0.03);--safe-bg:rgba(255,255,255,0.08);--center-bg:rgba(255,255,255,0.15);
-  --board-border:1px solid rgba(255,255,255,0.15);
-  --cell-bg:transparent;--cell-border:1px solid rgba(255,255,255,0.05);
-  --highlight-bg:rgba(255,255,255,0.1);--highlight-shadow:inset 0 0 0 2px rgba(255,255,255,0.4);
-  --outer-bg:rgba(255,255,255,0.02);--outer-shadow:0 8px 32px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.1);
-  --dice-bg:rgba(255,255,255,0.05);--dice-border:rgba(255,255,255,0.1);
-  --btn-grad:linear-gradient(135deg,#6366f1 0%,#a855f7 100%);--btn-text:#fff;
-  --accent:#a855f7;
-  --glass-blur:blur(24px);
+  --card-bg:rgba(255,255,255,0.03);--card-border:rgba(255,255,255,0.08);
+  --board-bg:rgba(255,255,255,0.02);--safe-bg:rgba(255,255,255,0.06);--center-bg:rgba(255,255,255,0.12);
+  --board-border:1px solid rgba(255,255,255,0.1);
+  --cell-bg:transparent;--cell-border:1px solid rgba(255,255,255,0.03);
+  --highlight-bg:rgba(255,255,255,0.08);--highlight-shadow:inset 0 0 0 2px rgba(255,255,255,0.3);
+  --outer-bg:rgba(255,255,255,0.01);--outer-shadow:0 8px 32px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05);
+  --dice-bg:rgba(255,255,255,0.03);--dice-border:rgba(255,255,255,0.08);
+  --btn-grad:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);--btn-text:#fff;
+  --accent:#7c3aed;
+  --glass-blur:blur(32px);
   --wood-grain:none;
 }
+
+.glass-glow {
+  mix-blend-mode: screen;
+  filter: blur(80px);
+}
+
 
 .glass::before {
   content: "";

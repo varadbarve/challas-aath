@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { GameState } from '../types';
 import { isSafe } from '../types';
 import Dice from './Dice.tsx';
+import { soundEngine } from '../utils/SoundEngine';
+import Confetti from './Confetti';
 
 interface Props {
   gameState: GameState;
@@ -11,9 +13,8 @@ interface Props {
 const PLAYER_COLORS = ['#e74c3c', '#2980b9', '#f39c12', '#27ae60'];
 const PLAYER_LIGHT  = ['#ff6b6b', '#5dade2', '#f9ca24', '#55efc4'];
 const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
-const CENTER_IDX    = 23; // 15 outer + 8 inner + 1 center
+const CENTER_IDX    = 23;
 
-// Arrows based on the path flow
 const ENTRY_ARROWS: { [key: string]: { color: string; arrow: string; pi: number; size?: string }[] } = {
   '3-1': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
   '1-1': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
@@ -30,17 +31,23 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
   const cur = players[currentPlayerIndex];
   const boardRef = useRef<HTMLDivElement>(null);
   const [cellPositions, setCellPositions] = useState<{ [key: string]: { x: number; y: number } }>({});
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const addLog = (msg: string) =>
     setGameState(prev => ({ ...prev, logs: [...prev.logs.slice(-19), msg] }));
 
-  const getNextActivePlayer = (currentIdx: number, playersList: typeof players) => {
-    let nextIdx = (currentIdx + 1) % playersList.length;
-    while (playersList[nextIdx].isFinished) {
-      nextIdx = (nextIdx + 1) % playersList.length;
-    }
-    return nextIdx;
+  const vibrate = (ms: number = 50) => {
+    if (navigator.vibrate) navigator.vibrate(ms);
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   useEffect(() => {
     const updatePositions = () => {
@@ -59,16 +66,14 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       });
       setCellPositions(newPos);
     };
-
     updatePositions();
     window.addEventListener('resize', updatePositions);
     return () => window.removeEventListener('resize', updatePositions);
   }, []);
 
-  const toggleTheme = () =>
-    setGameState(prev => ({ ...prev, theme: prev.theme === 'wooden' ? 'glass' : 'wooden' }));
-
   const handleRoll = (value: number) => {
+    soundEngine.playDice();
+    vibrate(30);
     const newPending = [...pendingRolls, value];
     let nextPhase = turnPhase;
     addLog(`${cur.name} rolled a ${value}`);
@@ -86,76 +91,67 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
           if (pos === CENTER_IDX) return false;
           const nextPos = pos + r;
           if (nextPos > CENTER_IDX) return false;
-          // Rule: Need hasKill to enter inner loop (pos >= 15)
           if (nextPos >= 15 && !cur.hasKill) return false;
           return true;
         })
       );
-
       if (!anyUsable) {
         addLog(`${cur.name} has no valid moves.`);
         setTimeout(() => {
           setGameState(prev => {
-            const nextExtra = prev.extraRolls;
-            if (nextExtra > 0) return { ...prev, turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: nextExtra - 1 };
-            return {
-              ...prev,
-              currentPlayerIndex: getNextActivePlayer(prev.currentPlayerIndex, prev.players),
-              turnPhase: 'rolling',
-              pendingRolls: [],
-              selectedRollIndex: null,
-              extraRolls: 0,
-            };
+            if (prev.extraRolls > 0) return { ...prev, turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: prev.extraRolls - 1 };
+            let n = (prev.currentPlayerIndex + 1) % prev.players.length;
+            while (prev.players[n].isFinished) n = (n + 1) % prev.players.length;
+            return { ...prev, currentPlayerIndex: n, turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: 0 };
           });
         }, 1200);
-        nextSelected = null;
       } else {
         nextSelected = newPending.length === 1 ? 0 : null;
       }
     }
-
     setGameState(prev => ({ ...prev, pendingRolls: newPending, turnPhase: nextPhase, selectedRollIndex: nextSelected }));
   };
 
   const movePiece = (pieceIndex: number) => {
     if (turnPhase !== 'moving' || selectedRollIndex === null) return;
     const roll = pendingRolls[selectedRollIndex];
-
     const currentPos = cur.pieces[pieceIndex];
     if (currentPos === CENTER_IDX) return;
     const newPos = currentPos + roll;
     if (newPos > CENTER_IDX) return;
-
-    // Entry block: Need hasKill to enter inner circle (pos 15+)
     if (newPos >= 15 && !cur.hasKill) {
       addLog(`${cur.name} needs a capture to enter the inner circle!`);
       return;
     }
 
+    soundEngine.playMove();
+    vibrate(20);
+
     const targetCoords = cur.path[newPos];
     let newPlayers = [...players];
     let gotKill = false;
 
-    // Check for capture
     if (!isSafe(targetCoords[0], targetCoords[1])) {
       newPlayers = newPlayers.map((p, pi) => {
         if (pi === currentPlayerIndex || p.isFinished) return p;
         let captured = false;
         const np = p.pieces.map(pos => {
-          if (pos === CENTER_IDX) return pos;
           const [r, c] = p.path[pos];
-          if (r === targetCoords[0] && c === targetCoords[1]) {
+          if (pos !== CENTER_IDX && r === targetCoords[0] && c === targetCoords[1]) {
             captured = true;
             return 0;
           }
           return pos;
         });
-        if (captured) gotKill = true;
+        if (captured) {
+          gotKill = true;
+          soundEngine.playCapture();
+          vibrate(100);
+        }
         return { ...p, pieces: np };
       });
     }
 
-    // Update current player
     newPlayers = newPlayers.map((p, pi) => {
       if (pi !== currentPlayerIndex) return p;
       const np = [...p.pieces];
@@ -163,7 +159,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       return { ...p, pieces: np, hasKill: p.hasKill || gotKill };
     });
 
-    if (gotKill) addLog(`${cur.name} captured a piece and earned hasKill status!`);
+    if (gotKill) addLog(`${cur.name} captured a piece! ⚔️`);
 
     let newFinishedPlayers = [...finishedPlayers];
     const updatedCur = newPlayers[currentPlayerIndex];
@@ -171,7 +167,10 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     if (updatedCur.pieces.every(p => p === CENTER_IDX) && !updatedCur.isFinished) {
       updatedCur.isFinished = true;
       newFinishedPlayers.push(updatedCur);
-      addLog(`${updatedCur.name} finished!`);
+      addLog(`${updatedCur.name} finished! 🎉`);
+      soundEngine.playWin();
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000);
     }
 
     if (newFinishedPlayers.length === newPlayers.length - 1) {
@@ -184,15 +183,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
 
     let newPending = pendingRolls.filter((_, i) => i !== selectedRollIndex);
     const newExtra = extraRolls + (gotKill ? 1 : 0);
-
-    const nextState: Partial<GameState> = {
-      players: newPlayers,
-      finishedPlayers: newFinishedPlayers,
-      pendingRolls: newPending,
-      extraRolls: newExtra,
-    };
-
-    nextState.selectedRollIndex = newPending.length === 1 ? 0 : null;
+    const nextState: Partial<GameState> = { players: newPlayers, finishedPlayers: newFinishedPlayers, pendingRolls: newPending, extraRolls: newExtra, selectedRollIndex: newPending.length === 1 ? 0 : null };
 
     if (newPending.length === 0) {
       if (newExtra > 0) {
@@ -200,36 +191,42 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         nextState.extraRolls = newExtra - 1;
         addLog(`${cur.name} gets an extra roll!`);
       } else {
-        nextState.currentPlayerIndex = getNextActivePlayer(currentPlayerIndex, newPlayers);
+        let n = (currentPlayerIndex + 1) % newPlayers.length;
+        while (newPlayers[n].isFinished) n = (n + 1) % newPlayers.length;
+        nextState.currentPlayerIndex = n;
         nextState.turnPhase = 'rolling';
       }
     }
-
     setGameState(prev => ({ ...prev, ...nextState }));
-  };
-
-  const renderCell = (r: number, c: number) => {
-    const isCenter = r === 2 && c === 2;
-    const safe     = isSafe(r, c);
-    const cellKey  = `${r}-${c}`;
-    const arrows   = ENTRY_ARROWS[cellKey] || [];
-
-    return (
-      <div key={cellKey} className={`cell${isCenter ? ' center' : safe ? ' safe' : ''}`}>
-        {arrows.map(({ color, arrow, pi, size }, i) => (
-          <span key={`arrow-${pi}-${i}`} className={`entry-arrow ${size === 'small' ? 'small-entry' : 'turn-arrow'}`} style={{ color }}>{arrow}</span>
-        ))}
-      </div>
-    );
   };
 
   return (
     <div className={`game-screen ${theme}`}>
+      {showConfetti && <Confetti />}
+      
+      {/* Glow Follow Effect for Glass Theme */}
+      {theme === 'glass' && (
+        <div 
+          className="glass-glow" 
+          style={{ 
+            left: mousePos.x, 
+            top: mousePos.y,
+            position: 'fixed',
+            width: '600px',
+            height: '600px',
+            background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            zIndex: 0
+          }}
+        />
+      )}
+
       <div className="game-topbar">
         <div className="game-logo">Challas Aath</div>
         <div className="turn-name" style={{ color: PLAYER_COLORS[currentPlayerIndex] }}>{PLAYER_EMOJI[currentPlayerIndex]} {cur.name}'s Turn</div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="theme-toggle-btn" onClick={toggleTheme}>{theme === 'wooden' ? '🌙' : '🪵'}</button>
+          <button className="theme-toggle-btn" onClick={() => setGameState(p => ({ ...p, theme: p.theme === 'wooden' ? 'glass' : 'wooden' }))}>{theme === 'wooden' ? '🌙' : '🪵'}</button>
           <button className="reset-btn" onClick={() => window.location.reload()}>Reset</button>
         </div>
       </div>
@@ -247,55 +244,49 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         <div className="board-wrapper">
           <div className="board-outer">
             <div className="board-grid" ref={boardRef}>
-              {Array.from({ length: 25 }, (_, i) => renderCell(Math.floor(i / 5), i % 5))}
+              {Array.from({ length: 25 }, (_, i) => {
+                const r = Math.floor(i / 5); const c = i % 5;
+                const cellKey = `${r}-${c}`; const arrows = ENTRY_ARROWS[cellKey] || [];
+                return (
+                  <div key={cellKey} className={`cell${r === 2 && c === 2 ? ' center' : isSafe(r, c) ? ' safe' : ''}`}>
+                    {arrows.map(({ color, arrow, pi, size }, i) => (
+                      <span key={`arrow-${pi}-${i}`} className={`entry-arrow ${size === 'small' ? 'small-entry' : 'turn-arrow'}`} style={{ color }}>{arrow}</span>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
             
-            {/* Animated Piece Layer */}
-            <div className="piece-layer" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+            <div className="piece-layer">
               {players.map((p, pi) => p.pieces.map((pos, pIdx) => {
                 if (p.isFinished && pos === CENTER_IDX) return null;
                 const [r, c] = p.path[pos];
                 const coords = cellPositions[`${r}-${c}`];
                 if (!coords) return null;
-                
-                const isOwn = pi === currentPlayerIndex;
-                const activeRoll = selectedRollIndex !== null ? pendingRolls[selectedRollIndex] : null;
-                const canMove = isOwn && turnPhase === 'moving' && activeRoll !== null && pos !== CENTER_IDX && (pos + activeRoll <= CENTER_IDX) && (pos + activeRoll < 15 || p.hasKill);
-
-                // Multiple pieces in same cell offset (fanning effect)
-                const piecesInCell = players.flatMap((op, opIdx) => 
-                  op.pieces.map((opos, pieceIdx) => ({ opIdx, pieceIdx, pos: opos }))
-                ).filter(item => {
-                  const [or, oc] = players[item.opIdx].path[item.pos];
-                  return or === r && oc === c;
+                const piecesInCell = players.flatMap((op, oPi) => op.pieces.map((opos, oIdx) => ({ oPi, oIdx, pos: opos }))).filter(it => {
+                   const [or, oc] = players[it.oPi].path[it.pos];
+                   return or === r && oc === c;
                 });
-
-                const pieceRank = piecesInCell.findIndex(item => item.opIdx === pi && item.pieceIdx === pIdx);
-                const totalInCell = piecesInCell.length;
-                
-                // Offset calculation for fanning
-                const xOffset = totalInCell > 1 ? (pieceRank - (totalInCell - 1) / 2) * 12 : 0;
-                const yOffset = totalInCell > 1 ? (pieceRank - (totalInCell - 1) / 2) * 2 : 0;
+                const rank = piecesInCell.findIndex(it => it.oPi === pi && it.oIdx === pIdx);
+                const xOff = piecesInCell.length > 1 ? (rank - (piecesInCell.length - 1) / 2) * 12 : 0;
+                const yOff = piecesInCell.length > 1 ? (rank - (piecesInCell.length - 1) / 2) * 2 : 0;
+                const isOwn = pi === currentPlayerIndex;
+                const roll = selectedRollIndex !== null ? pendingRolls[selectedRollIndex] : null;
+                const canMove = isOwn && turnPhase === 'moving' && roll !== null && pos !== CENTER_IDX && (pos + roll <= CENTER_IDX) && (pos + roll < 15 || p.hasKill);
 
                 return (
                   <div
                     key={`${pi}-${pIdx}`}
                     className={`board-piece ${canMove ? 'playable' : ''}`}
                     style={{
-                      position: 'absolute',
-                      left: coords.x + xOffset,
-                      top: coords.y + yOffset,
-                      transform: 'translate(-50%, -50%)',
-                      backgroundColor: PLAYER_COLORS[pi],
-                      border: `2px solid ${PLAYER_LIGHT[pi]}`,
-                      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                      pointerEvents: 'auto',
-                      zIndex: canMove ? 20 : 2 + pieceRank
+                      left: coords.x + xOff, top: coords.y + yOff,
+                      backgroundColor: PLAYER_COLORS[pi], border: `2px solid ${PLAYER_LIGHT[pi]}`,
+                      zIndex: canMove ? 20 : 2 + rank, position: 'absolute', transform: 'translate(-50%, -50%)',
+                      pointerEvents: canMove ? 'auto' : 'none'
                     }}
                     onClick={() => canMove && movePiece(pIdx)}
                   />
                 );
-
               }))}
             </div>
           </div>
