@@ -17,6 +17,7 @@ export type GameState = {
   pendingRolls: number[];
   selectedRollIndex: number | null;
   extraRolls: number;
+  theme: 'wooden' | 'neo';
 };
 
 export const GRID_SIZE = 5;

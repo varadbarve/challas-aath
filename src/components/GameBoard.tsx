@@ -13,8 +13,20 @@ const PLAYER_LIGHT  = ['#ff6b6b', '#5dade2', '#f9ca24', '#55efc4'];
 const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
 const CENTER_IDX    = 24;
 
+// Entry arrows: which cell gets which player's arrow, and in which direction
+// Player 0 (Red)  starts at [4,2] → arrow points UP (↑)
+// Player 1 (Blue) starts at [2,4] → arrow points LEFT (←)
+// Player 2 (Yellow) starts at [0,2] → arrow points DOWN (↓)
+// Player 3 (Green) starts at [2,0] → arrow points RIGHT (→)
+const ENTRY_ARROWS: { [key: string]: { color: string; arrow: string; pi: number }[] } = {
+  '4-2': [{ color: PLAYER_COLORS[0], arrow: '↑', pi: 0 }],
+  '2-4': [{ color: PLAYER_COLORS[1], arrow: '←', pi: 1 }],
+  '0-2': [{ color: PLAYER_COLORS[2], arrow: '↓', pi: 2 }],
+  '2-0': [{ color: PLAYER_COLORS[3], arrow: '→', pi: 3 }],
+};
+
 const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
-  const { players, currentPlayerIndex, finishedPlayers, turnPhase, pendingRolls, selectedRollIndex, extraRolls } = gameState;
+  const { players, currentPlayerIndex, finishedPlayers, turnPhase, pendingRolls, selectedRollIndex, extraRolls, theme } = gameState;
   const cur = players[currentPlayerIndex];
 
   const addLog = (msg: string) =>
@@ -28,10 +40,13 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     return nextIdx;
   };
 
+  const toggleTheme = () =>
+    setGameState(prev => ({ ...prev, theme: prev.theme === 'wooden' ? 'neo' : 'wooden' }));
+
   const handleRoll = (value: number) => {
     const newPending = [...pendingRolls, value];
     let nextPhase = turnPhase;
-    
+
     addLog(`${cur.name} rolled a ${value}${value === 8 ? ' — Aath! 🎉' : value === 4 ? ' — Challas! ✨' : ''}`);
 
     if (value === 4 || value === 8) {
@@ -42,7 +57,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
 
     let nextSelected = selectedRollIndex;
     if (nextPhase === 'moving') {
-      const anyUsable = newPending.some(r => 
+      const anyUsable = newPending.some(r =>
         cur.pieces.some(pos => pos !== CENTER_IDX && pos + r <= CENTER_IDX)
       );
 
@@ -50,7 +65,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         addLog(`${cur.name} has no valid moves.`);
         setTimeout(() => {
           setGameState(prev => {
-            let nextExtra = prev.extraRolls;
+            const nextExtra = prev.extraRolls;
             if (nextExtra > 0) {
               return { ...prev, turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: nextExtra - 1 };
             }
@@ -81,7 +96,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
   const movePiece = (pieceIndex: number) => {
     if (turnPhase !== 'moving' || selectedRollIndex === null) return;
     const roll = pendingRolls[selectedRollIndex];
-    
+
     const currentPos = cur.pieces[pieceIndex];
     if (currentPos === CENTER_IDX) return;
     const newPos = currentPos + roll;
@@ -131,16 +146,16 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       const lastPlayer = newPlayers.find(p => !p.isFinished)!;
       lastPlayer.isFinished = true;
       newFinishedPlayers.push(lastPlayer);
-      setGameState(prev => ({ 
-        ...prev, players: newPlayers, status: 'finished', finishedPlayers: newFinishedPlayers 
+      setGameState(prev => ({
+        ...prev, players: newPlayers, status: 'finished', finishedPlayers: newFinishedPlayers
       }));
       return;
     }
 
     let newPending = pendingRolls.filter((_, i) => i !== selectedRollIndex);
-    let newExtra = extraRolls + (gotKill ? 1 : 0);
+    const newExtra = extraRolls + (gotKill ? 1 : 0);
 
-    let nextState: Partial<GameState> = {
+    const nextState: Partial<GameState> = {
       players: newPlayers,
       finishedPlayers: newFinishedPlayers,
       pendingRolls: newPending,
@@ -150,7 +165,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     nextState.selectedRollIndex = newPending.length === 1 ? 0 : null;
 
     if (newPending.length > 0) {
-      const anyUsable = newPending.some(r => 
+      const anyUsable = newPending.some(r =>
         updatedCur.pieces.some(pos => pos !== CENTER_IDX && pos + r <= CENTER_IDX)
       );
       if (!anyUsable) {
@@ -176,9 +191,11 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     setGameState(prev => ({ ...prev, ...nextState }));
   };
 
+  /* ── CELL ───────────────────────────────────────── */
   const renderCell = (r: number, c: number) => {
     const isCenter = r === 2 && c === 2;
     const safe     = isSafe(r, c);
+    const cellKey  = `${r}-${c}`;
 
     const piecesHere: { pi: number; idx: number }[] = [];
     players.forEach((p, pi) => {
@@ -199,11 +216,24 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         return pos !== CENTER_IDX && pos + activeRoll <= CENTER_IDX;
       });
 
+    const arrows = ENTRY_ARROWS[cellKey] || [];
+
     return (
       <div
-        key={`${r}-${c}`}
+        key={cellKey}
         className={`cell${isCenter ? ' center' : safe ? ' safe' : ''}${isHighlighted ? ' highlight' : ''}`}
       >
+        {/* Entry arrows */}
+        {arrows.map(({ color, arrow, pi }) => (
+          <span
+            key={`arrow-${pi}`}
+            className="entry-arrow"
+            style={{ color }}
+          >
+            {arrow}
+          </span>
+        ))}
+
         {piecesHere.map(({ pi, idx }) => {
           const pos     = players[pi].pieces[idx];
           const isOwn   = pi === currentPlayerIndex;
@@ -226,6 +256,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     );
   };
 
+  /* ── PLAYER CARD ────────────────────────────────── */
   const renderPlayerCard = (p: typeof players[0], i: number) => {
     const isActive = i === currentPlayerIndex;
     const atCenter = p.pieces.filter(pos => pos === CENTER_IDX).length;
@@ -237,7 +268,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       <div
         key={i}
         className={`player-card${isActive ? ' active' : ''}`}
-        style={{ 
+        style={{
           '--player-color': PLAYER_COLORS[i],
           opacity: p.isFinished ? 0.5 : 1,
           filter: p.isFinished ? 'grayscale(0.7)' : 'none'
@@ -250,8 +281,8 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
           <div>
             <div className="player-name-card">{p.name}</div>
             <div className="player-status">
-              {p.isFinished 
-                ? `Finished ${finishRank}${['st', 'nd', 'rd'][finishRank! - 1] || 'th'}!` 
+              {p.isFinished
+                ? `Finished ${finishRank}${['st', 'nd', 'rd'][finishRank! - 1] || 'th'}!`
                 : isActive
                   ? turnPhase === 'moving' ? (selectedRollIndex !== null ? '⬆ Pick a piece!' : 'Select a roll') : '🎲 Roll now'
                   : 'Waiting…'}
@@ -267,8 +298,9 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     );
   };
 
+  /* ── RENDER ─────────────────────────────────────── */
   return (
-    <div className="game-screen">
+    <div className={`game-screen ${theme}`}>
       <div className="game-topbar">
         <div className="game-logo">Challas Aath</div>
         <div style={{ textAlign: 'center' }}>
@@ -277,16 +309,21 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
             {PLAYER_EMOJI[currentPlayerIndex]} {cur.name}
           </div>
         </div>
-        <button
-          className="reset-btn"
-          onClick={() => setGameState(prev => ({
-            ...prev, status: 'setup', players: [], finishedPlayers: [], currentPlayerIndex: 0,
-            turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: 0,
-            logs: ['Game reset.']
-          }))}
-        >
-          ↩ New Game
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button className="theme-toggle-btn" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'wooden' ? '🌙' : '🪵'}
+          </button>
+          <button
+            className="reset-btn"
+            onClick={() => setGameState(prev => ({
+              ...prev, status: 'setup', players: [], finishedPlayers: [], currentPlayerIndex: 0,
+              turnPhase: 'rolling', pendingRolls: [], selectedRollIndex: null, extraRolls: 0,
+              logs: ['Game reset.']
+            }))}
+          >
+            ↩ New
+          </button>
+        </div>
       </div>
 
       <div className="game-main">
@@ -312,18 +349,8 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
                   {pendingRolls.map((roll, i) => (
                     <button
                       key={i}
+                      className={`roll-pill${selectedRollIndex === i ? ' selected' : ''}`}
                       onClick={() => setGameState(prev => ({ ...prev, selectedRollIndex: i }))}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.5rem',
-                        background: selectedRollIndex === i ? 'linear-gradient(135deg, #f9ca24, #f0932b)' : 'rgba(255,255,255,0.1)',
-                        color: selectedRollIndex === i ? '#000' : '#fff',
-                        border: 'none',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transform: selectedRollIndex === i ? 'scale(1.1)' : 'scale(1)',
-                        transition: 'all 0.2s',
-                      }}
                     >
                       {roll}
                     </button>
@@ -331,11 +358,11 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
                 </div>
               </div>
             )}
-            
+
             {turnPhase === 'rolling' && (
               <div className="roll-result">
                 {pendingRolls.length > 0 ? `Accumulated: ${pendingRolls.join(', ')}` : 'Roll the shells!'}
-                {extraRolls > 0 && <span style={{display: 'block', color: '#55efc4', fontSize: '0.8rem', marginTop: '0.2rem'}}>Extra Rolls Available: {extraRolls}</span>}
+                {extraRolls > 0 && <span style={{ display: 'block', color: '#55efc4', fontSize: '0.8rem', marginTop: '0.2rem' }}>Extra Rolls: {extraRolls}</span>}
               </div>
             )}
 

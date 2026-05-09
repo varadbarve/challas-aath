@@ -18,6 +18,7 @@ const App: React.FC = () => {
     pendingRolls: [],
     selectedRollIndex: null,
     extraRolls: 0,
+    theme: 'wooden',
   });
 
   const handleStartGame = (names: string[]) => {
@@ -27,11 +28,12 @@ const App: React.FC = () => {
       id: i,
       name,
       color: COLORS[i],
-      pieces: [0, 0, 0, 0], // All start at home square on the board
+      pieces: [0, 0, 0, 0],
       path: playerPaths[i],
       isFinished: false,
     }));
-    setGameState({
+    setGameState(prev => ({
+      ...prev,
       players: initialPlayers,
       currentPlayerIndex: 0,
       status: 'playing',
@@ -41,7 +43,7 @@ const App: React.FC = () => {
       pendingRolls: [],
       selectedRollIndex: null,
       extraRolls: 0,
-    });
+    }));
   };
 
   if (gameState.status === 'setup') {
@@ -50,7 +52,7 @@ const App: React.FC = () => {
 
   if (gameState.status === 'finished') {
     return (
-      <div className="winner-screen">
+      <div className={`winner-screen ${gameState.theme}`}>
         <div className="winner-card" style={{ padding: '2rem 3rem' }}>
           <div className="winner-trophy">🏆</div>
           <div className="winner-title" style={{ fontSize: '2rem' }}>Game Over!</div>
