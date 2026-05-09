@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { GameState, Player } from '../types';
-import { isSafe, GRID_SIZE } from '../types';
+import type { GameState } from '../types';
+import { isSafe } from '../types';
 import Dice from './Dice.tsx';
 
 interface Props {
