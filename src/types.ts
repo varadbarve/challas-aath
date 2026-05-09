@@ -18,11 +18,13 @@ export type GameState = {
 
 export const GRID_SIZE = 5;
 
-// Common safe squares [row, col]
+// Safe squares [row, col] — starting squares of each player + center (NOT corners)
 export const SAFE_SQUARES = [
-  [0, 0], [0, 4], [4, 0], [4, 4],
-  [2, 0], [2, 4], [0, 2], [4, 2],
-  [2, 2]
+  [4, 2], // Player 1 (Red) home
+  [2, 4], // Player 2 (Blue) home
+  [0, 2], // Player 3 (Yellow) home
+  [2, 0], // Player 4 (Green) home
+  [2, 2], // Center
 ];
 
 // Helper to check if a square is safe

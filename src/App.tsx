@@ -24,7 +24,7 @@ const App: React.FC = () => {
       id: i,
       name,
       color: COLORS[i],
-      pieces: [-1, -1, -1, -1],
+      pieces: [0, 0, 0, 0], // All start at home square on the board
       path: playerPaths[i],
       isFinished: false,
     }));

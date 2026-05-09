@@ -11,76 +11,48 @@ interface Props {
 const PLAYER_COLORS = ['#e74c3c', '#2980b9', '#f39c12', '#27ae60'];
 const PLAYER_LIGHT  = ['#ff6b6b', '#5dade2', '#f9ca24', '#55efc4'];
 const PLAYER_EMOJI  = ['🔴', '🔵', '🟡', '🟢'];
-
-// Center cell
-const CENTER: [number, number] = [2, 2];
+const CENTER_IDX    = 24; // path.length - 1
 
 const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
   const { players, currentPlayerIndex, diceRoll } = gameState;
   const cur = players[currentPlayerIndex];
 
-  /* ── helpers ── */
-  const log = (msg: string) =>
+  const addLog = (msg: string) =>
     setGameState(prev => ({ ...prev, logs: [...prev.logs.slice(-19), msg] }));
 
-  /* ── Roll handler ── */
+  /* ─── ROLL ─────────────────────────────────────────────── */
   const handleRoll = (value: number) => {
-    setGameState(prev => ({ ...prev, diceRoll: value }));
-    log(`${cur.name} rolled a ${value}!`);
-
-    // Check if ANY move is possible; if not, auto-pass after delay
+    // Check if any piece can legally move
     const canMove = cur.pieces.some(pos => {
-      if (pos === -1) return value === 1 || value === 8;        // need 1 or 8 to enter
-      if (pos === cur.path.length - 1) return false;            // already at center
-      return pos + value <= cur.path.length - 1;
+      if (pos === CENTER_IDX) return false;        // already at center
+      return pos + value <= CENTER_IDX;            // can move without overshoot
     });
 
+    setGameState(prev => ({ ...prev, diceRoll: value }));
+    addLog(`${cur.name} rolled a ${value}${value === 8 ? ' — Aath! 🎉' : value === 4 ? ' — Challas! ✨' : ''}!`);
+
     if (!canMove) {
-      log(`${cur.name} has no valid move — turn skipped.`);
-      setTimeout(() => {
+      addLog(`${cur.name} has no valid move — turn skipped.`);
+      setTimeout(() =>
         setGameState(prev => ({
           ...prev,
           currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
           diceRoll: null,
-        }));
-      }, 1800);
+        })), 1800);
     }
   };
 
-  /* ── Move a home piece onto the board ── */
-  const moveHomePiece = (pieceIndex: number) => {
-    if (diceRoll === null) return;
-    if (cur.pieces[pieceIndex] !== -1) return;          // not at home
-    if (diceRoll !== 1 && diceRoll !== 8) return;       // wrong roll
-
-    const newPlayers = players.map((p, pi) => {
-      if (pi !== currentPlayerIndex) return p;
-      const newPieces = [...p.pieces];
-      newPieces[pieceIndex] = 0;                        // start at path[0]
-      return { ...p, pieces: newPieces };
-    });
-
-    log(`${cur.name} brought a piece onto the board!`);
-    setGameState(prev => ({
-      ...prev,
-      players: newPlayers,
-      currentPlayerIndex: (prev.currentPlayerIndex + 1) % prev.players.length,
-      diceRoll: null,
-    }));
-  };
-
-  /* ── Move a board piece ── */
-  const moveBoardPiece = (pieceIndex: number) => {
+  /* ─── MOVE ─────────────────────────────────────────────── */
+  const movePiece = (pieceIndex: number) => {
     if (diceRoll === null) return;
     const currentPos = cur.pieces[pieceIndex];
-    if (currentPos === -1) return;                      // still at home — use moveHomePiece
-
+    if (currentPos === CENTER_IDX) return;           // already done
     const newPos = currentPos + diceRoll;
-    if (newPos > cur.path.length - 1) return;           // would overshoot center
+    if (newPos > CENTER_IDX) return;                 // can't overshoot center
 
     const targetCoords = cur.path[newPos];
 
-    // Clone players; update current player's piece
+    // Apply move
     let newPlayers = players.map((p, pi) => {
       if (pi !== currentPlayerIndex) return p;
       const np = [...p.pieces];
@@ -88,33 +60,33 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
       return { ...p, pieces: np };
     });
 
-    // Capture enemy pieces on that cell (if not safe)
+    // Capture: land on non-safe square occupied by opponent → send to pos 0 (home)
     if (!isSafe(targetCoords[0], targetCoords[1])) {
       newPlayers = newPlayers.map((p, pi) => {
         if (pi === currentPlayerIndex) return p;
+        let captured = false;
         const np = p.pieces.map(pos => {
-          if (pos === -1) return -1;
+          if (pos === CENTER_IDX) return pos;        // pieces at center are safe
           const [r, c] = p.path[pos];
           if (r === targetCoords[0] && c === targetCoords[1]) {
-            log(`${cur.name} captured ${p.name}'s piece!`);
-            return -1;   // sent home
+            captured = true;
+            return 0;                                // back to home square (pos 0)
           }
           return pos;
         });
+        if (captured) addLog(`${cur.name} captured ${p.name}'s piece!`);
         return { ...p, pieces: np };
       });
     }
 
-    // Win check: all 4 pieces at center
+    // Win: all 4 pieces at center
     const updatedCur = newPlayers[currentPlayerIndex];
-    const allDone = updatedCur.pieces.every(p => p === cur.path.length - 1);
-
-    if (allDone) {
+    if (updatedCur.pieces.every(p => p === CENTER_IDX)) {
       setGameState(prev => ({ ...prev, players: newPlayers, status: 'winner', winner: updatedCur }));
       return;
     }
 
-    log(`${cur.name} moved a piece.`);
+    addLog(`${cur.name} moved a piece.`);
     setGameState(prev => ({
       ...prev,
       players: newPlayers,
@@ -123,28 +95,27 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     }));
   };
 
-  /* ── Cell renderer ── */
+  /* ─── CELL RENDERER ────────────────────────────────────── */
   const renderCell = (r: number, c: number) => {
-    const isCenter = r === CENTER[0] && c === CENTER[1];
+    const isCenter = r === 2 && c === 2;
     const safe     = isSafe(r, c);
 
-    // Collect all board pieces on this cell
+    // Collect all pieces sitting on this cell
     const piecesHere: { pi: number; idx: number }[] = [];
     players.forEach((p, pi) => {
       p.pieces.forEach((pos, idx) => {
-        if (pos < 0) return;
         const [pr, pc] = p.path[pos];
         if (pr === r && pc === c) piecesHere.push({ pi, idx });
       });
     });
 
-    const isHighlighted = diceRoll !== null && piecesHere.some(
-      ({ pi, idx }) => {
+    const isHighlighted =
+      diceRoll !== null &&
+      piecesHere.some(({ pi, idx }) => {
         if (pi !== currentPlayerIndex) return false;
-        const pos = cur.pieces[idx];
-        return pos + diceRoll <= cur.path.length - 1;
-      }
-    );
+        const pos = players[pi].pieces[idx];
+        return pos !== CENTER_IDX && pos + diceRoll <= CENTER_IDX;
+      });
 
     return (
       <div
@@ -152,9 +123,9 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
         className={`cell${isCenter ? ' center' : safe ? ' safe' : ''}${isHighlighted ? ' highlight' : ''}`}
       >
         {piecesHere.map(({ pi, idx }) => {
-          const isOwn    = pi === currentPlayerIndex;
-          const canMove  = isOwn && diceRoll !== null &&
-            cur.pieces[idx] + diceRoll <= cur.path.length - 1;
+          const pos     = players[pi].pieces[idx];
+          const isOwn   = pi === currentPlayerIndex;
+          const canMove = isOwn && diceRoll !== null && pos !== CENTER_IDX && pos + diceRoll <= CENTER_IDX;
 
           return (
             <div
@@ -162,11 +133,10 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
               className={`board-piece${canMove ? ' playable' : ''}`}
               style={{
                 backgroundColor: PLAYER_COLORS[pi],
-                boxShadow: `0 3px 8px rgba(0,0,0,0.4)`,
                 border: `2px solid ${PLAYER_LIGHT[pi]}`,
               }}
-              onClick={() => canMove && moveBoardPiece(idx)}
-              title={`${players[pi].name}'s piece`}
+              onClick={() => canMove && movePiece(idx)}
+              title={`${players[pi].name}'s piece${canMove ? ' — click to move' : ''}`}
             />
           );
         })}
@@ -174,9 +144,13 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     );
   };
 
-  /* ── Player side panel ── */
+  /* ─── PLAYER CARD ──────────────────────────────────────── */
   const renderPlayerCard = (p: typeof players[0], i: number) => {
     const isActive = i === currentPlayerIndex;
+    const atCenter = p.pieces.filter(pos => pos === CENTER_IDX).length;
+    const atHome   = p.pieces.filter(pos => pos === 0).length;
+    const moving   = 4 - atCenter - atHome;
+
     return (
       <div
         key={i}
@@ -190,50 +164,23 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
           <div>
             <div className="player-name-card">{p.name}</div>
             <div className="player-status">
-              {isActive ? (diceRoll !== null ? 'Pick a piece!' : 'Your turn') : 'Waiting…'}
+              {isActive
+                ? diceRoll !== null ? '⬆ Pick a piece!' : '🎲 Roll now'
+                : 'Waiting…'}
             </div>
           </div>
         </div>
-
-        {/* Home pieces — only pieces still at home (pos === -1) */}
-        <div className="home-pieces">
-          {p.pieces.map((pos, pi2) => {
-            const atHome   = pos === -1;
-            const atCenter = pos === p.path.length - 1;
-            const canEnter = isActive && diceRoll !== null && atHome
-              && (diceRoll === 1 || diceRoll === 8);
-
-            return (
-              <div
-                key={pi2}
-                className={`home-piece${atCenter ? ' at-center' : ''}${!atHome && !atCenter ? ' inactive' : ''}${canEnter ? ' playable' : ''}`}
-                style={{
-                  backgroundColor: atCenter
-                    ? undefined
-                    : atHome
-                    ? PLAYER_COLORS[i]
-                    : 'rgba(255,255,255,0.08)',
-                  border: `3px solid ${PLAYER_LIGHT[i]}`,
-                  color: PLAYER_COLORS[i],
-                  opacity: atHome || atCenter ? 1 : 0.2,
-                }}
-                onClick={() => canEnter && moveHomePiece(pi2)}
-                title={
-                  atHome ? (canEnter ? 'Click to enter board!' : 'Waiting at home')
-                  : atCenter ? 'Reached the center! ★'
-                  : 'On the board'
-                }
-              >
-                {atCenter && <span style={{ fontSize: '1rem', zIndex: 1 }}>★</span>}
-              </div>
-            );
-          })}
+        {/* Piece status indicators */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+          <span title="At home square">🏠 {atHome}</span>
+          <span title="Moving on board">🎯 {moving}</span>
+          <span title="Reached center">⭐ {atCenter}</span>
         </div>
       </div>
     );
   };
 
-  /* ── Render ── */
+  /* ─── RENDER ────────────────────────────────────────────── */
   return (
     <div className="game-screen">
       {/* Top bar */}
@@ -245,25 +192,26 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
             {PLAYER_EMOJI[currentPlayerIndex]} {cur.name}
           </div>
         </div>
-        <button className="reset-btn" onClick={() =>
-          setGameState(prev => ({
+        <button
+          className="reset-btn"
+          onClick={() => setGameState(prev => ({
             ...prev, status: 'setup', players: [], currentPlayerIndex: 0,
             diceRoll: null, winner: null, logs: ['Game reset.']
-          }))
-        }>
+          }))}
+        >
           ↩ New Game
         </button>
       </div>
 
       {/* Main */}
       <div className="game-main">
-        {/* Left — players 0 & 3 */}
+        {/* Left: Players 1 & 4 */}
         <div className="side-panel">
           {renderPlayerCard(players[0], 0)}
           {renderPlayerCard(players[3], 3)}
         </div>
 
-        {/* Center — board + dice */}
+        {/* Center: Board + Dice */}
         <div className="board-wrapper">
           <div className="board-outer">
             <div className="board-grid">
@@ -276,16 +224,14 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
           <div className="dice-area">
             {diceRoll !== null && (
               <div className="roll-result">
-                Rolled {diceRoll} — {
-                  diceRoll === 8 ? 'Aath! 🎉' : diceRoll === 4 ? 'Challas! ✨' : ''
-                } Click a piece to move
+                Rolled {diceRoll}{diceRoll === 8 ? ' — Aath! 🎉' : diceRoll === 4 ? ' — Challas! ✨' : ''} — Click a piece to move
               </div>
             )}
             <Dice onRoll={handleRoll} disabled={diceRoll !== null} />
           </div>
         </div>
 
-        {/* Right — players 1 & 2 */}
+        {/* Right: Players 2 & 3 */}
         <div className="side-panel">
           {renderPlayerCard(players[1], 1)}
           {renderPlayerCard(players[2], 2)}
