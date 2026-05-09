@@ -82,7 +82,7 @@ const GameBoard: React.FC<Props> = ({ gameState, setGameState }) => {
     let nextSelected = selectedRollIndex;
     if (nextPhase === 'moving') {
       const anyUsable = newPending.some(r =>
-        cur.pieces.some((pos, idx) => {
+        cur.pieces.some((pos) => {
           if (pos === CENTER_IDX) return false;
           const nextPos = pos + r;
           if (nextPos > CENTER_IDX) return false;

@@ -1,4 +1,4 @@
-import type { Player } from './types';
+
 
 export const getPaths = () => {
   const outer: [number, number][] = [
